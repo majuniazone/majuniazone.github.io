@@ -1,24 +1,81 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Majunia Zone - Oficial</title>
+    <title>Majunia Zone</title>
     <style>
-        body { background-color: #000; color: #fff; font-family: sans-serif; text-align: center; padding: 40px; }
-        h1 { color: #ffcc00; text-shadow: 2px 2px #ff0000; font-size: 2.5rem; }
-        .box { border: 2px solid #58a6ff; padding: 20px; border-radius: 15px; background: #161b22; }
-        .tag { background: #3fb950; color: white; padding: 5px 10px; border-radius: 5px; font-weight: bold; }
+        /* Estilos rápidos para la vista previa */
+        body {
+            background-color: #000000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: sans-serif;
+        }
+        .card {
+            background-color: #1a1a1a;
+            border: 2px solid #3498db;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            max-width: 320px;
+            width: 90%;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        }
+        .main-logo {
+            max-width: 100%;
+            height: auto;
+            margin-bottom: 20px;
+        }
+        .status-badge {
+            background-color: #2ecc71;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+        .description {
+            color: #ffffff;
+            font-size: 1.1rem;
+            line-height: 1.4;
+            margin-bottom: 20px;
+        }
+        .divider {
+            border: 0;
+            border-top: 1px solid #333;
+            margin: 20px 0;
+        }
+        .footer-text {
+            color: #888;
+            font-size: 0.8rem;
+        }
     </style>
 </head>
 <body>
-    <div class="box">
-        <h1>MAJUNIA ZONE</h1>
-        <p><span class="tag">ESTADO: EN CONSTRUCCIÓN</span></p>
-        <p>Próximamente verás aquí mis mangas de <b>Dragon Ball</b> y <b>Nanatsu no Taizai</b>.</p>
-        <hr style="border: 0.5px solid #30363d;">
-        <p>Hecho con amor por un artista digital.</p>
+
+    <div class="card">
+        <img src="logo.png" alt="Majunia Zone" class="main-logo">
+
+        <div class="status-badge">
+            ESTADO: EN CONSTRUCCIÓN
+        </div>
+
+        <p class="description">
+            Próximamente aquí verás mis proyectos.
+        </p>
+
+        <hr class="divider">
+
+        <p class="footer-text">
+            Hecho con amor por un artista digital.
+        </p>
     </div>
+
 </body>
 </html>
