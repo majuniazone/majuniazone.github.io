@@ -1,117 +1,113 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Majunia Zone</title>
-    <style>
-        body {
-            background-color: #000000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            font-family: 'Arial Black', Gadget, sans-serif;
-        }
+import React, { useState, useEffect } from 'react';
 
-        /* LOGO CREADO CON CÓDIGO */
-        .logo-codificado {
-            text-align: center;
-            line-height: 0.9;
-            margin-bottom: 25px;
-            user-select: none;
-        }
+// ==========================================
+// CÓDIGO MAESTRO DE MAJUNIAZONE (VERSIÓN TOTAL)
+// ==========================================
 
-        .logo-linea {
-            display: block;
-            font-size: 3rem;
-            color: white;
-            text-transform: uppercase;
-            text-shadow: 
-                -3px -3px 0 #ff0000,  
-                 3px -3px 0 #ff0000,
-                -3px  3px 0 #ff0000,
-                 3px  3px 0 #ff0000,
-                 5px  5px 0 #000000;
-        }
+export default function MajuniaZone() {
+  // --- ESTADOS DE SEGURIDAD Y NAVEGACIÓN ---
+  const [vista, setVista] = useState('bienvenida');
+  const [usuarioAdmin, setUsuarioAdmin] = useState('usuario');
+  const [claveAdmin, setClaveAdmin] = useState('contraseña123');
+  
+  // Datos temporales para el Login
+  const [inputUser, setInputUser] = useState('');
+  const [inputPass, setInputPass] = useState('');
 
-        .card {
-            background-color: #111111;
-            border: 2px solid #3498db;
-            border-radius: 20px;
-            padding: 40px 20px;
-            text-align: center;
-            max-width: 400px;
-            width: 85%;
-            box-shadow: 0 0 30px rgba(52, 152, 219, 0.3);
-        }
+  // --- ESTADOS DEL LECTOR Y CONTENIDO ---
+  const [paginaActual, setPaginaActual] = useState(0);
+  const [mangas, setMangas] = useState([
+    { id: 1, titulo: "Mi Primer Manga", portada: "https://via.placeholder.com/150", paginas: ["https://via.placeholder.com/400x600/eee", "https://via.placeholder.com/400x600/ddd"] }
+  ]);
 
-        .status-badge {
-            background-color: #2ecc71;
-            color: white;
-            padding: 8px 20px;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 0.85rem;
-            margin-bottom: 25px;
-            display: inline-block;
-            font-family: sans-serif;
-        }
+  // --- LÓGICA DE SEGURIDAD ---
+  const verificarAcceso = () => {
+    if (inputUser === usuarioAdmin && inputPass === claveAdmin) {
+      setVista('panel-control');
+    } else {
+      alert('Acceso denegado: Usuario o clave incorrectos');
+    }
+  };
 
-        .description {
-            color: #ffffff;
-            font-size: 1.1rem;
-            line-height: 1.6;
-            margin-bottom: 30px;
-            font-family: sans-serif;
-        }
+  // --- ESTILOS TOTALMENTE BLANCOS ---
+  const estilos = {
+    fondo: { backgroundColor: '#FFFFFF', minHeight: '100vh', color: '#000000', fontFamily: 'sans-serif', display: 'flex', flexDirection: 'column', alignItems: 'center' },
+    botonNegro: { backgroundColor: '#000000', color: '#FFFFFF', padding: '15px 30px', borderRadius: '10px', border: 'none', margin: '10px', fontSize: '16px', fontWeight: 'bold', width: '250px', cursor: 'pointer' },
+    botonBlanco: { backgroundColor: '#FFFFFF', color: '#000000', padding: '15px 30px', borderRadius: '10px', border: '2px solid #000000', margin: '10px', fontSize: '16px', fontWeight: 'bold', width: '250px', cursor: 'pointer' },
+    input: { padding: '12px', margin: '10px', width: '280px', border: '1px solid #000', borderRadius: '5px' }
+  };
 
-        .tags {
-            color: #f1c40f;
-            font-weight: bold;
-            font-size: 0.9rem;
-            letter-spacing: 1px;
-        }
+  // 1. PANTALLA DE BIENVENIDA (ADUANA)
+  if (vista === 'bienvenida') {
+    return (
+      <div style={{...estilos.fondo, justifyContent: 'center'}}>
+        <h1 style={{fontSize: '2.5rem', letterSpacing: '2px'}}>MAJUNIAZONE</h1>
+        <p style={{marginBottom: '30px', color: '#666'}}>Portal de Autor - Manga & Webtoon</p>
+        <button style={estilos.botonNegro} onClick={() => setVista('biblioteca')}>ENTRAR COMO LECTOR</button>
+        <button style={estilos.botonBlanco} onClick={() => setVista('login')}>ACCESO ADMINISTRADOR</button>
+      </div>
+    );
+  }
 
-        .divider {
-            border: 0;
-            border-top: 1px solid #222;
-            margin: 25px 0;
-        }
+  // 2. FORMULARIO DE LOGIN
+  if (vista === 'login') {
+    return (
+      <div style={{...estilos.fondo, justifyContent: 'center'}}>
+        <h2>IDENTIFICACIÓN</h2>
+        <input style={estilos.input} placeholder="Usuario" onChange={(e) => setInputUser(e.target.value)} />
+        <input style={estilos.input} type="password" placeholder="Contraseña" onChange={(e) => setInputPass(e.target.value)} />
+        <button style={estilos.botonNegro} onClick={verificarAcceso}>INGRESAR AL PANEL</button>
+        <button style={{background: 'none', border: 'none', marginTop: '20px', cursor: 'pointer'}} onClick={() => setVista('bienvenida')}>← Volver</button>
+      </div>
+    );
+  }
 
-        .footer {
-            color: #666;
-            font-size: 0.8rem;
-            font-family: sans-serif;
-        }
-    </style>
-</head>
-<body>
-
-    <div class="card">
-        <div class="logo-codificado">
-            <span class="logo-linea">MAJUNIA</span>
-            <span class="logo-linea">ZONE</span>
+  // 3. PANEL DE CONTROL (SUBIDA Y CAMBIO DE CLAVE)
+  if (vista === 'panel-control') {
+    return (
+      <div style={{...estilos.fondo, padding: '20px'}}>
+        <h2>PANEL DE ADMINISTRACIÓN</h2>
+        
+        {/* Sección: Cambio de Seguridad */}
+        <div style={{border: '1px solid #eee', padding: '20px', width: '100%', maxWidth: '400px', marginBottom: '20px'}}>
+          <h3>Configuración de Seguridad</h3>
+          <p style={{fontSize: '12px', color: 'red'}}>Cambia el usuario y contraseña inicial aquí</p>
+          <input style={estilos.input} placeholder="Nuevo Usuario" onChange={(e) => setUsuarioAdmin(e.target.value)} />
+          <input style={estilos.input} type="password" placeholder="Nueva Contraseña" onChange={(e) => setClaveAdmin(e.target.value)} />
+          <button style={{...estilos.botonNegro, width: '100%'}} onClick={() => alert('Seguridad Actualizada')}>GUARDAR CAMBIOS</button>
         </div>
 
-        <div class="status-badge">SITIO OFICIAL</div>
+        {/* Sección: Subida Masiva */}
+        <div style={{border: '1px solid #eee', padding: '20px', width: '100%', maxWidth: '400px'}}>
+          <h3>Subir Nuevo Capítulo</h3>
+          <input type="file" multiple style={{margin: '10px 0'}} />
+          <button style={{...estilos.botonNegro, width: '100%'}}>PUBLICAR CAPÍTULO</button>
+        </div>
+        
+        <button style={{marginTop: '40px'}} onClick={() => setVista('bienvenida')}>CERRAR SESIÓN</button>
+      </div>
+    );
+  }
 
-        <p class="description">
-            Bienvenido a mi zona creativa.<br>
-            <strong>Próximamente aquí verás mis proyectos.</strong>
-        </p>
+  // 4. BIBLIOTECA Y LECTOR (PARA LECTORES)
+  return (
+    <div style={{...estilos.fondo, padding: '20px'}}>
+      <header style={{width: '100%', display: 'flex', justifyContent: 'space-between'}}>
+        <h3>MAJUNIAZONE</h3>
+        <button onClick={() => setVista('bienvenida')}>Cerrar</button>
+      </header>
 
-        <p class="tags">
-            MANGA • FANMANGAS • ARTE DIGITAL
-        </p>
-
-        <hr class="divider">
-
-        <p class="footer">
-            Hecho con amor por Majunia.
-        </p>
+      {/* Simulador de Lector Página por Página */}
+      <div style={{marginTop: '40px', textAlign: 'center'}}>
+        <div style={{width: '100%', maxWidth: '400px', height: '600px', backgroundColor: '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative'}}>
+           <p>Página {paginaActual + 1}</p>
+           {/* Aquí se cargará la imagen de tu dibujo de Ibis Paint */}
+        </div>
+        <div style={{marginTop: '20px'}}>
+          <button style={{padding: '10px'}} onClick={() => setPaginaActual(Math.max(0, paginaActual - 1))}>Anterior</button>
+          <button style={{padding: '10px', marginLeft: '10px'}} onClick={() => setPaginaActual(paginaActual + 1)}>Siguiente</button>
+        </div>
+      </div>
     </div>
-
-</body>
-</html>
+  );
+}
