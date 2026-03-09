@@ -1,113 +1,197 @@
-import React, { useState, useEffect } from 'react';
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mi Manga</title>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
+  <style>
+    body{font-family:sans-serif;margin:20px;background:#111;color:#eee}
+    input,button,textarea{padding:8px;margin:5px}
+    #chapters{ display:grid; grid-template-columns:repeat(auto-fill, minmax(180px,1fr)); gap:10px; }
+    .chapter{border:1px solid #444;padding:10px;background:#222}
+    img{max-width:100%;display:block}
+  </style>
+</head>
+<body>
 
-// ==========================================
-// CÓDIGO MAESTRO DE MAJUNIAZONE (VERSIÓN TOTAL)
-// ==========================================
+<h1>Subir y leer mangas</h1>
 
-export default function MajuniaZone() {
-  // --- ESTADOS DE SEGURIDAD Y NAVEGACIÓN ---
-  const [vista, setVista] = useState('bienvenida');
-  const [usuarioAdmin, setUsuarioAdmin] = useState('usuario');
-  const [claveAdmin, setClaveAdmin] = useState('contraseña123');
+<!-- Auth -->
+<div id="auth">
+  <input id="email" placeholder="Email" type="email">
+  <input id="pass" placeholder="Contraseña" type="password">
+  <button onclick="register()">Registrar</button>
+  <button onclick="login()">Login</button>
+  <button onclick="logout()" id="logout" style="display:none">Salir</button>
+  <p id="user"></p>
+</div>
+
+<!-- Subir -->
+<div id="upload" style="display:none">
+  <h2>Subir capítulo</h2>
+  <input id="title" placeholder="Título del manga">
+  <input id="chapterNum" placeholder="Número capítulo" type="number">
+  <input id="files" type="file" multiple accept="image/*">
+  <button onclick="uploadChapter()">Subir</button>
+</div>
+
+<!-- Lista -->
+<h2>Mis mangas</h2>
+<div id="chapters"></div>
+
+<!-- Lector + comentarios -->
+<div id="reader" style="display:none">
+  <button onclick="backToList()">Volver</button>
+  <h2 id="readerTitle"></h2>
+  <div id="pages"></div>
   
-  // Datos temporales para el Login
-  const [inputUser, setInputUser] = useState('');
-  const [inputPass, setInputPass] = useState('');
+  <h3>Comentarios</h3>
+  <textarea id="comment" placeholder="Escribe un comentario..."></textarea>
+  <button onclick="addComment()">Enviar</button>
+  <div id="comments"></div>
+</div>
 
-  // --- ESTADOS DEL LECTOR Y CONTENIDO ---
-  const [paginaActual, setPaginaActual] = useState(0);
-  const [mangas, setMangas] = useState([
-    { id: 1, titulo: "Mi Primer Manga", portada: "https://via.placeholder.com/150", paginas: ["https://via.placeholder.com/400x600/eee", "https://via.placeholder.com/400x600/ddd"] }
-  ]);
+<script>
+// ↓ Pega aquí tu firebaseConfig del console
+const firebaseConfig = {
+  apiKey: "TU_API_KEY",
+  authDomain: "TU_PROYECTO.firebaseapp.com",
+  projectId: "TU_PROYECTO",
+  storageBucket: "TU_PROYECTO.appspot.com",
+  messagingSenderId: "TU_SENDER_ID",
+  appId: "TU_APP_ID"
+};
 
-  // --- LÓGICA DE SEGURIDAD ---
-  const verificarAcceso = () => {
-    if (inputUser === usuarioAdmin && inputPass === claveAdmin) {
-      setVista('panel-control');
-    } else {
-      alert('Acceso denegado: Usuario o clave incorrectos');
-    }
-  };
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+const storage = firebase.storage();
 
-  // --- ESTILOS TOTALMENTE BLANCOS ---
-  const estilos = {
-    fondo: { backgroundColor: '#FFFFFF', minHeight: '100vh', color: '#000000', fontFamily: 'sans-serif', display: 'flex', flexDirection: 'column', alignItems: 'center' },
-    botonNegro: { backgroundColor: '#000000', color: '#FFFFFF', padding: '15px 30px', borderRadius: '10px', border: 'none', margin: '10px', fontSize: '16px', fontWeight: 'bold', width: '250px', cursor: 'pointer' },
-    botonBlanco: { backgroundColor: '#FFFFFF', color: '#000000', padding: '15px 30px', borderRadius: '10px', border: '2px solid #000000', margin: '10px', fontSize: '16px', fontWeight: 'bold', width: '250px', cursor: 'pointer' },
-    input: { padding: '12px', margin: '10px', width: '280px', border: '1px solid #000', borderRadius: '5px' }
-  };
+let currentUser = null;
+let currentMangaId = null;
 
-  // 1. PANTALLA DE BIENVENIDA (ADUANA)
-  if (vista === 'bienvenida') {
-    return (
-      <div style={{...estilos.fondo, justifyContent: 'center'}}>
-        <h1 style={{fontSize: '2.5rem', letterSpacing: '2px'}}>MAJUNIAZONE</h1>
-        <p style={{marginBottom: '30px', color: '#666'}}>Portal de Autor - Manga & Webtoon</p>
-        <button style={estilos.botonNegro} onClick={() => setVista('biblioteca')}>ENTRAR COMO LECTOR</button>
-        <button style={estilos.botonBlanco} onClick={() => setVista('login')}>ACCESO ADMINISTRADOR</button>
-      </div>
-    );
-  }
+// Auth
+auth.onAuthStateChanged(user => {
+  currentUser = user;
+  document.getElementById("user").textContent = user ? `Hola, ${user.email}` : "";
+  document.getElementById("logout").style.display = user ? "inline" : "none";
+  document.getElementById("upload").style.display = user ? "block" : "none";
+  loadMangas();
+});
 
-  // 2. FORMULARIO DE LOGIN
-  if (vista === 'login') {
-    return (
-      <div style={{...estilos.fondo, justifyContent: 'center'}}>
-        <h2>IDENTIFICACIÓN</h2>
-        <input style={estilos.input} placeholder="Usuario" onChange={(e) => setInputUser(e.target.value)} />
-        <input style={estilos.input} type="password" placeholder="Contraseña" onChange={(e) => setInputPass(e.target.value)} />
-        <button style={estilos.botonNegro} onClick={verificarAcceso}>INGRESAR AL PANEL</button>
-        <button style={{background: 'none', border: 'none', marginTop: '20px', cursor: 'pointer'}} onClick={() => setVista('bienvenida')}>← Volver</button>
-      </div>
-    );
-  }
-
-  // 3. PANEL DE CONTROL (SUBIDA Y CAMBIO DE CLAVE)
-  if (vista === 'panel-control') {
-    return (
-      <div style={{...estilos.fondo, padding: '20px'}}>
-        <h2>PANEL DE ADMINISTRACIÓN</h2>
-        
-        {/* Sección: Cambio de Seguridad */}
-        <div style={{border: '1px solid #eee', padding: '20px', width: '100%', maxWidth: '400px', marginBottom: '20px'}}>
-          <h3>Configuración de Seguridad</h3>
-          <p style={{fontSize: '12px', color: 'red'}}>Cambia el usuario y contraseña inicial aquí</p>
-          <input style={estilos.input} placeholder="Nuevo Usuario" onChange={(e) => setUsuarioAdmin(e.target.value)} />
-          <input style={estilos.input} type="password" placeholder="Nueva Contraseña" onChange={(e) => setClaveAdmin(e.target.value)} />
-          <button style={{...estilos.botonNegro, width: '100%'}} onClick={() => alert('Seguridad Actualizada')}>GUARDAR CAMBIOS</button>
-        </div>
-
-        {/* Sección: Subida Masiva */}
-        <div style={{border: '1px solid #eee', padding: '20px', width: '100%', maxWidth: '400px'}}>
-          <h3>Subir Nuevo Capítulo</h3>
-          <input type="file" multiple style={{margin: '10px 0'}} />
-          <button style={{...estilos.botonNegro, width: '100%'}}>PUBLICAR CAPÍTULO</button>
-        </div>
-        
-        <button style={{marginTop: '40px'}} onClick={() => setVista('bienvenida')}>CERRAR SESIÓN</button>
-      </div>
-    );
-  }
-
-  // 4. BIBLIOTECA Y LECTOR (PARA LECTORES)
-  return (
-    <div style={{...estilos.fondo, padding: '20px'}}>
-      <header style={{width: '100%', display: 'flex', justifyContent: 'space-between'}}>
-        <h3>MAJUNIAZONE</h3>
-        <button onClick={() => setVista('bienvenida')}>Cerrar</button>
-      </header>
-
-      {/* Simulador de Lector Página por Página */}
-      <div style={{marginTop: '40px', textAlign: 'center'}}>
-        <div style={{width: '100%', maxWidth: '400px', height: '600px', backgroundColor: '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative'}}>
-           <p>Página {paginaActual + 1}</p>
-           {/* Aquí se cargará la imagen de tu dibujo de Ibis Paint */}
-        </div>
-        <div style={{marginTop: '20px'}}>
-          <button style={{padding: '10px'}} onClick={() => setPaginaActual(Math.max(0, paginaActual - 1))}>Anterior</button>
-          <button style={{padding: '10px', marginLeft: '10px'}} onClick={() => setPaginaActual(paginaActual + 1)}>Siguiente</button>
-        </div>
-      </div>
-    </div>
-  );
+function register() {
+  const email = document.getElementById("email").value;
+  const pass = document.getElementById("pass").value;
+  auth.createUserWithEmailAndPassword(email, pass).catch(e=>alert(e.message));
 }
+
+function login() {
+  const email = document.getElementById("email").value;
+  const pass = document.getElementById("pass").value;
+  auth.signInWithEmailAndPassword(email, pass).catch(e=>alert(e.message));
+}
+
+function logout() { auth.signOut(); }
+
+// Subir
+async function uploadChapter() {
+  if (!currentUser) return alert("Inicia sesión");
+  const title = document.getElementById("title").value.trim();
+  const chapNum = document.getElementById("chapterNum").value;
+  const files = document.getElementById("files").files;
+
+  if (!title || !chapNum || files.length === 0) return alert("Faltan datos");
+
+  const mangaId = title.toLowerCase().replace(/\s+/g,"-") + "-" + currentUser.uid.slice(0,8);
+  const chapterId = "cap-" + chapNum.padStart(3,"0");
+
+  const batch = [];
+  for (let file of files) {
+    const ref = storage.ref(`mangas/\( {mangaId}/ \){chapterId}/${file.name}`);
+    await ref.put(file);
+    const url = await ref.getDownloadURL();
+    batch.push({name: file.name, url});
+  }
+
+  await db.collection("mangas").doc(mangaId).set({title, owner: currentUser.uid}, {merge:true});
+  await db.collection("mangas").doc(mangaId).collection("chapters").doc(chapterId).set({
+    number: Number(chapNum),
+    pages: batch,
+    uploadedAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+
+  alert("Capítulo subido");
+  loadMangas();
+}
+
+// Cargar lista
+async function loadMangas() {
+  const snap = await db.collection("mangas").get();
+  let html = "";
+  snap.forEach(doc => {
+    const d = doc.data();
+    html += `<div class="chapter">
+      <h3>${d.title}</h3>
+      <button onclick="openManga('\( {doc.id}', ' \){d.title}')">Leer</button>
+    </div>`;
+  });
+  document.getElementById("chapters").innerHTML = html || "<p>No hay mangas aún</p>";
+}
+
+// Abrir manga
+async function openManga(mangaId, title) {
+  currentMangaId = mangaId;
+  document.getElementById("readerTitle").textContent = title;
+  document.getElementById("chapters").style.display = "none";
+  document.getElementById("reader").style.display = "block";
+
+  const chapSnap = await db.collection("mangas").doc(mangaId).collection("chapters").orderBy("number").get();
+  let pagesHtml = "";
+  chapSnap.forEach(doc => {
+    const ch = doc.data();
+    pagesHtml += `<h4>Capítulo ${ch.number}</h4>`;
+    ch.pages.forEach(p => {
+      pagesHtml += `<img src="${p.url}" alt="page">`;
+    });
+  });
+  document.getElementById("pages").innerHTML = pagesHtml || "<p>Sin capítulos</p>";
+
+  loadComments();
+}
+
+// Comentarios
+async function addComment() {
+  if (!currentUser || !currentMangaId) return;
+  const text = document.getElementById("comment").value.trim();
+  if (!text) return;
+
+  await db.collection("mangas").doc(currentMangaId).collection("comments").add({
+    text,
+    user: currentUser.email,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+  document.getElementById("comment").value = "";
+  loadComments();
+}
+
+async function loadComments() {
+  const snap = await db.collection("mangas").doc(currentMangaId).collection("comments").orderBy("createdAt","desc").get();
+  let html = "";
+  snap.forEach(doc => {
+    const c = doc.data();
+    html += `<p><b>${c.user}</b>: ${c.text}</p>`;
+  });
+  document.getElementById("comments").innerHTML = html || "<p>Sin comentarios</p>";
+}
+
+function backToList() {
+  document.getElementById("reader").style.display = "none";
+  document.getElementById("chapters").style.display = "grid";
+}
+</script>
+</body>
+</html>
